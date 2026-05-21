@@ -1,0 +1,32 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.2.5'
+    id 'io.spring.dependency-management' version '1.1.4'
+}
+
+group = 'com.spamclassifier'
+version = '1.0.0'
+
+java {
+    sourceCompatibility = '17'
+    targetCompatibility = '17'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Spring Boot Web (includes embedded Tomcat, Spring MVC, Jackson)
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+
+    // Bean Validation (for @NotBlank on DTOs)
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    // Testing
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
