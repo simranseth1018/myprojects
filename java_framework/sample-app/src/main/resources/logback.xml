@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Logback configuration for the sample application.
+
+    Logback is the reference implementation of SLF4J (Simple Logging Facade for Java).
+    Spring Boot uses Logback by default.
+
+    Key concepts:
+    - Appender: WHERE to write logs (console, file, socket, etc.)
+    - Logger: WHO logs (by package/class)
+    - Level: WHAT to log (TRACE < DEBUG < INFO < WARN < ERROR)
+-->
+<configuration>
+
+    <!-- Console appender with color support -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %highlight(%-5level) %cyan(%logger{36}) - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Reduce Jetty noise -->
+    <logger name="org.eclipse.jetty" level="WARN"/>
+    <logger name="org.reflections" level="WARN"/>
+
+    <!-- Framework internals — DEBUG for development -->
+    <logger name="io.javaframework" level="DEBUG"/>
+
+    <!-- Application code — INFO in production -->
+    <logger name="com.example" level="DEBUG"/>
+
+    <!-- Root logger -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+</configuration>
