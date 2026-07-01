@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional, List
 import uuid
 from datetime import datetime, date
@@ -23,6 +23,8 @@ class AddressIn(BaseModel):
 
 
 class AddressOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     name: str
     phone: str
@@ -33,7 +35,6 @@ class AddressOut(BaseModel):
     pincode: Optional[str]
     type: str
     is_default: bool
-    model_config = {"from_attributes": True}
 
 
 class PrescriptionIn(BaseModel):
@@ -52,6 +53,8 @@ class PrescriptionIn(BaseModel):
 
 
 class PrescriptionOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     label: Optional[str]
     right_sph: Optional[float]
@@ -63,7 +66,6 @@ class PrescriptionOut(BaseModel):
     pd: Optional[float]
     expiry_date: Optional[date]
     created_at: datetime
-    model_config = {"from_attributes": True}
 
 
 class EyeTestBookingIn(BaseModel):
@@ -77,6 +79,8 @@ class EyeTestBookingIn(BaseModel):
 
 
 class EyeTestBookingOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     name: str
     phone: str
@@ -85,4 +89,9 @@ class EyeTestBookingOut(BaseModel):
     booking_time: str
     status: str
     created_at: datetime
-    model_config = {"from_attributes": True}
+
+
+class WishlistToggleIn(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    product_id: uuid.UUID

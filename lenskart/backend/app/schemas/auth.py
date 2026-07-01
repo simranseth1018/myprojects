@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from typing import Optional
 import uuid
 from datetime import datetime
@@ -10,9 +10,11 @@ class LoginRequest(BaseModel):
 
 
 class RegisterRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     email: EmailStr
     password: str
-    full_name: str
+    full_name: str = Field(alias="fullName")
     phone: Optional[str] = None
 
 
@@ -21,25 +23,27 @@ class GoogleLoginRequest(BaseModel):
 
 
 class RefreshRequest(BaseModel):
-    refresh_token: str
+    model_config = ConfigDict(populate_by_name=True)
+
+    refresh_token: str = Field(alias="refreshToken")
 
 
 class UserOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     email: str
-    full_name: str
-    phone: Optional[str]
+    fullName: str = Field(validation_alias="full_name")
+    phone: Optional[str] = None
     role: str
-    avatar_url: Optional[str]
-    email_verified: bool
-    created_at: datetime
-
-    model_config = {"from_attributes": True}
+    avatarUrl: Optional[str] = Field(None, validation_alias="avatar_url")
+    emailVerified: bool = Field(validation_alias="email_verified")
+    createdAt: datetime = Field(validation_alias="created_at")
 
 
 class AuthResponse(BaseModel):
-    access_token: str
-    refresh_token: str
-    token_type: str = "Bearer"
-    expires_in: int
+    accessToken: str
+    refreshToken: str
+    tokenType: str = "Bearer"
+    expiresIn: int
     user: UserOut

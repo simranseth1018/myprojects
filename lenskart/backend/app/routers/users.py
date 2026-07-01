@@ -9,7 +9,7 @@ from app.models.product import Product
 from app.models.review import Review
 from app.models.store import EyeTestBooking, BookingStatus
 from app.schemas.auth import UserOut
-from app.schemas.user import UpdateProfileIn, AddressIn, AddressOut, PrescriptionIn, PrescriptionOut, EyeTestBookingIn, EyeTestBookingOut
+from app.schemas.user import UpdateProfileIn, AddressIn, AddressOut, PrescriptionIn, PrescriptionOut, EyeTestBookingIn, EyeTestBookingOut, WishlistToggleIn
 from app.schemas.product import ReviewIn, ReviewOut
 from app.schemas.common import ApiResponse
 from datetime import datetime, time
@@ -32,6 +32,7 @@ async def update_profile(body: UpdateProfileIn, user_id: str = Depends(get_curre
     if body.full_name: user.full_name = body.full_name
     if body.phone: user.phone = body.phone
     if body.avatar_url: user.avatar_url = body.avatar_url
+    await db.flush()
     return ApiResponse.ok(data=UserOut.model_validate(user))
 
 
@@ -68,8 +69,20 @@ async def update_address(address_id: uuid.UUID, body: AddressIn,
     addr = await db.scalar(select(Address).where(Address.id == address_id, Address.user_id == uid))
     if not addr:
         raise HTTPException(404, "Address not found")
-    for field, val in body.model_dump(exclude_none=True).items():
+
+    # Unset other defaults if this one is being set as default
+    if body.is_default:
+        others = (await db.execute(select(Address).where(Address.user_id == uid, Address.id != address_id))).scalars().all()
+        for a in others:
+            a.is_default = False
+
+    # Update fields, handling enum conversion for 'type'
+    data = body.model_dump(exclude_none=True)
+    for field, val in data.items():
+        if field == "type":
+            val = AddressType(val.upper())
         setattr(addr, field, val)
+    await db.flush()
     return ApiResponse.ok(data=AddressOut.model_validate(addr))
 
 
@@ -91,15 +104,17 @@ async def get_wishlist(user_id: str = Depends(get_current_user_id), db: AsyncSes
 
 
 @router.post("/me/wishlist/toggle")
-async def toggle_wishlist(body: dict, user_id: str = Depends(get_current_user_id), db: AsyncSession = Depends(get_db)):
+async def toggle_wishlist(body: WishlistToggleIn, user_id: str = Depends(get_current_user_id), db: AsyncSession = Depends(get_db)):
     uid = uuid.UUID(user_id)
-    product_id = uuid.UUID(body["productId"])
+    product_id = body.product_id
     existing = await db.scalar(select(Wishlist).where(Wishlist.user_id == uid, Wishlist.product_id == product_id))
     if existing:
         await db.delete(existing)
+        await db.flush()
         return ApiResponse.ok(data={"added": False})
     else:
         db.add(Wishlist(user_id=uid, product_id=product_id))
+        await db.flush()
         return ApiResponse.ok(data={"added": True})
 
 

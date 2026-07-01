@@ -16,25 +16,19 @@ router = APIRouter(prefix="/api/cart", tags=["cart"])
 
 
 async def _get_or_create_cart(user_id: uuid.UUID, db: AsyncSession) -> Cart:
-    cart = await db.scalar(
-        select(Cart).where(Cart.user_id == user_id).options(
-            selectinload(Cart.items).selectinload(CartItem.product).selectinload(Product.images),
-            selectinload(Cart.items).selectinload(CartItem.product).selectinload(Product.variants),
-            selectinload(Cart.items).selectinload(CartItem.product).selectinload(Product.category),
-            selectinload(Cart.items).selectinload(CartItem.variant),
-            selectinload(Cart.items).selectinload(CartItem.lens_option),
-        )
-    )
+    q = select(Cart).where(Cart.user_id == user_id).options(
+        selectinload(Cart.items).selectinload(CartItem.product).selectinload(Product.images),
+        selectinload(Cart.items).selectinload(CartItem.product).selectinload(Product.variants),
+        selectinload(Cart.items).selectinload(CartItem.product).selectinload(Product.category),
+        selectinload(Cart.items).selectinload(CartItem.variant),
+        selectinload(Cart.items).selectinload(CartItem.lens_option),
+    ).execution_options(populate_existing=True)
+    cart = await db.scalar(q)
     if not cart:
         cart = Cart(user_id=user_id)
         db.add(cart)
         await db.flush()
-        # Re-fetch with relationships loaded
-        cart = await db.scalar(
-            select(Cart).where(Cart.user_id == user_id).options(
-                selectinload(Cart.items),
-            )
-        )
+        cart = await db.scalar(q)
     return cart
 
 
@@ -146,6 +140,7 @@ async def remove_item(item_id: uuid.UUID, user_id: str = Depends(get_current_use
 async def clear_cart(user_id: str = Depends(get_current_user_id), db: AsyncSession = Depends(get_db)):
     cart = await db.scalar(select(Cart).where(Cart.user_id == uuid.UUID(user_id)))
     if cart:
-        for item in await db.execute(select(CartItem).where(CartItem.cart_id == cart.id)):
-            await db.delete(item[0])
+        items = (await db.execute(select(CartItem).where(CartItem.cart_id == cart.id))).scalars().all()
+        for item in items:
+            await db.delete(item)
     return ApiResponse.ok(message="Cart cleared")

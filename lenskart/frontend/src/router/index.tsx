@@ -60,6 +60,15 @@ function PageLoader() {
   )
 }
 
+function StaticPage({ title }: { title: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+      <h1 className="text-2xl font-bold text-gray-900 mb-2">{title}</h1>
+      <p className="text-gray-500">This page is coming soon.</p>
+    </div>
+  )
+}
+
 function NotFound() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
@@ -104,6 +113,12 @@ export const router = createBrowserRouter([
       { path: 'eye-test', element: <div className="p-8 text-center text-xl">Eye Test Booking</div> },
       { path: 'stores', element: <div className="p-8 text-center text-xl">Store Locator</div> },
       { path: 'offers', element: <div className="p-8 text-center text-xl">Offers</div> },
+      { path: 'terms', element: <StaticPage title="Terms & Conditions" /> },
+      { path: 'privacy', element: <StaticPage title="Privacy Policy" /> },
+      { path: 'cookies', element: <StaticPage title="Cookie Policy" /> },
+      { path: 'warranty', element: <StaticPage title="Warranty Policy" /> },
+      { path: 'about', element: <StaticPage title="About Lenskart" /> },
+      { path: 'careers', element: <StaticPage title="Careers" /> },
       { path: '*', element: <NotFound /> },
     ],
   },
@@ -112,6 +127,7 @@ export const router = createBrowserRouter([
     children: [
       { path: 'auth/login', element: <Login /> },
       { path: 'auth/register', element: <Register /> },
+      { path: 'auth/forgot-password', element: <StaticPage title="Forgot Password" /> },
     ],
   },
 ])

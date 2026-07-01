@@ -141,7 +141,7 @@ function drawGlasses(
   ctx.save()
 
   // Lens tint fill
-  const lensAlpha = shape === 'AVIATOR' || product.isBestseller ? 0.18 : 0.12
+  const lensAlpha = shape === 'AVIATOR' || product.isFeatured ? 0.18 : 0.12
   ctx.fillStyle = `rgba(180,210,240,${lensAlpha})`
 
   for (const lcx of [leftCx, rightCx]) {

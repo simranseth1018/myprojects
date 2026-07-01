@@ -27,23 +27,29 @@ async def create_razorpay_order(body: dict, user_id: str = Depends(get_current_u
 
 @router.post("/verify")
 async def verify_payment(body: PaymentVerifyIn, user_id: str = Depends(get_current_user_id), db: AsyncSession = Depends(get_db)):
-    # Verify Razorpay signature
-    expected = hmac.new(
-        settings.RAZORPAY_KEY_SECRET.encode(),
-        f"{body.razorpay_order_id}|{body.razorpay_payment_id}".encode(),
-        hashlib.sha256,
-    ).hexdigest()
+    # Skip signature verification in dev mode (no real Razorpay secret)
+    is_dev = not settings.RAZORPAY_KEY_SECRET or settings.RAZORPAY_KEY_SECRET == ""
 
-    if expected != body.razorpay_signature and settings.RAZORPAY_KEY_SECRET != "your_razorpay_secret":
-        raise HTTPException(400, "Payment verification failed")
+    if not is_dev:
+        expected = hmac.new(
+            settings.RAZORPAY_KEY_SECRET.encode(),
+            f"{body.razorpay_order_id}|{body.razorpay_payment_id}".encode(),
+            hashlib.sha256,
+        ).hexdigest()
+
+        if not hmac.compare_digest(expected, body.razorpay_signature):
+            raise HTTPException(400, "Payment verification failed")
 
     order = await db.scalar(select(Order).where(Order.razorpay_order_id == body.razorpay_order_id))
-    if order:
-        order.razorpay_payment_id = body.razorpay_payment_id
-        order.payment_status = PaymentStatus.PAID
-        order.status = OrderStatus.CONFIRMED
-        order.tracking_history.append(
-            OrderTracking(order_id=order.id, status=OrderStatus.CONFIRMED, message="Payment confirmed. Processing your order.")
-        )
+    if not order:
+        raise HTTPException(404, "Order not found for this payment")
+
+    order.razorpay_payment_id = body.razorpay_payment_id
+    order.payment_status = PaymentStatus.PAID
+    order.status = OrderStatus.CONFIRMED
+    order.tracking_history.append(
+        OrderTracking(order_id=order.id, status=OrderStatus.CONFIRMED, message="Payment confirmed. Processing your order.")
+    )
+    await db.flush()
 
     return ApiResponse.ok(message="Payment verified successfully")
