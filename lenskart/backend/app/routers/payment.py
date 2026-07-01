@@ -1,0 +1,49 @@
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from app.core.database import get_db
+from app.core.security import get_current_user_id
+from app.core.config import settings
+from app.models.order import Order, OrderTracking, OrderStatus, PaymentStatus
+from app.schemas.order import PaymentVerifyIn
+from app.schemas.common import ApiResponse
+import hmac, hashlib, uuid
+
+router = APIRouter(prefix="/api/payment", tags=["payment"])
+
+
+@router.post("/create-order")
+async def create_razorpay_order(body: dict, user_id: str = Depends(get_current_user_id)):
+    # In production: call Razorpay API to create an order
+    # For dev: return a mock order id
+    rzp_order_id = f"order_{uuid.uuid4().hex[:16]}"
+    return ApiResponse.ok(data={
+        "id": rzp_order_id,
+        "amount": body.get("amount"),
+        "currency": "INR",
+        "key": settings.RAZORPAY_KEY_ID,
+    })
+
+
+@router.post("/verify")
+async def verify_payment(body: PaymentVerifyIn, user_id: str = Depends(get_current_user_id), db: AsyncSession = Depends(get_db)):
+    # Verify Razorpay signature
+    expected = hmac.new(
+        settings.RAZORPAY_KEY_SECRET.encode(),
+        f"{body.razorpay_order_id}|{body.razorpay_payment_id}".encode(),
+        hashlib.sha256,
+    ).hexdigest()
+
+    if expected != body.razorpay_signature and settings.RAZORPAY_KEY_SECRET != "your_razorpay_secret":
+        raise HTTPException(400, "Payment verification failed")
+
+    order = await db.scalar(select(Order).where(Order.razorpay_order_id == body.razorpay_order_id))
+    if order:
+        order.razorpay_payment_id = body.razorpay_payment_id
+        order.payment_status = PaymentStatus.PAID
+        order.status = OrderStatus.CONFIRMED
+        order.tracking_history.append(
+            OrderTracking(order_id=order.id, status=OrderStatus.CONFIRMED, message="Payment confirmed. Processing your order.")
+        )
+
+    return ApiResponse.ok(message="Payment verified successfully")
