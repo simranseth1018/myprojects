@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 280" fill="none">
+  <!-- Left lens (trapezoidal wayfarer) -->
+  <path d="M100 60 L330 52 Q340 52 340 62 L340 195 Q340 210 325 210 L115 210 Q100 210 100 195Z" fill="rgba(60,60,60,0.15)" stroke="#1a1a1a" stroke-width="8" stroke-linejoin="round"/>
+  <!-- Right lens -->
+  <path d="M460 52 L690 60 Q700 60 700 75 L700 195 Q700 210 685 210 L475 210 Q460 210 460 195 L460 62 Q460 52 470 52Z" fill="rgba(60,60,60,0.15)" stroke="#1a1a1a" stroke-width="8" stroke-linejoin="round"/>
+  <!-- Bridge -->
+  <path d="M340 100 Q400 70 460 100" stroke="#1a1a1a" stroke-width="7" fill="none"/>
+  <!-- Left temple -->
+  <line x1="100" y1="110" x2="0" y2="120" stroke="#1a1a1a" stroke-width="6" stroke-linecap="round"/>
+  <!-- Right temple -->
+  <line x1="700" y1="110" x2="800" y2="120" stroke="#1a1a1a" stroke-width="6" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 320" fill="none">
+  <!-- Left lens (teardrop) -->
+  <path d="M210 50 C320 50 330 150 310 230 C295 280 125 280 110 230 C90 150 100 50 210 50Z" fill="rgba(120,90,50,0.18)" stroke="#8B7355" stroke-width="5"/>
+  <!-- Right lens (teardrop) -->
+  <path d="M590 50 C700 50 710 150 690 230 C675 280 505 280 490 230 C470 150 480 50 590 50Z" fill="rgba(120,90,50,0.18)" stroke="#8B7355" stroke-width="5"/>
+  <!-- Top bar -->
+  <path d="M85 55 L715 55" stroke="#8B7355" stroke-width="5" stroke-linecap="round"/>
+  <!-- Bridge -->
+  <path d="M340 80 Q400 50 460 80" stroke="#8B7355" stroke-width="5" fill="none"/>
+  <!-- Left temple -->
+  <line x1="85" y1="55" x2="0" y2="70" stroke="#8B7355" stroke-width="4.5" stroke-linecap="round"/>
+  <!-- Right temple -->
+  <line x1="715" y1="55" x2="800" y2="70" stroke="#8B7355" stroke-width="4.5" stroke-linecap="round"/>
+  <!-- Nose pads -->
+  <ellipse cx="355" cy="120" rx="6" ry="10" stroke="#8B7355" stroke-width="2" fill="none" transform="rotate(-10 355 120)"/>
+  <ellipse cx="445" cy="120" rx="6" ry="10" stroke="#8B7355" stroke-width="2" fill="none" transform="rotate(10 445 120)"/>
+</svg>

@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState, useCallback } from 'react'
 import type { FaceLandmarker, NormalizedLandmark } from '@mediapipe/tasks-vision'
 import { computeGlassesTransform } from '@/lib/faceGeometry'
-import { drawGlasses } from '@/lib/glassesRenderer'
+import { loadOverlayImage } from '@/lib/imageOverlay'
 import type { Product } from '@/types/product'
 
 interface UseFaceDetectionLoopOptions {
@@ -26,6 +26,33 @@ export function useFaceDetectionLoop({
   const lastDetectionRef = useRef<number>(0)
   const cachedLandmarksRef = useRef<NormalizedLandmark[] | null>(null)
   const faceLastSeenRef = useRef<number>(0)
+
+  // Preloaded overlay image (local SVG or processed product photo)
+  const overlayRef = useRef<HTMLCanvasElement | null>(null)
+  const overlayProductIdRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (!activeProduct) {
+      overlayRef.current = null
+      overlayProductIdRef.current = null
+      return
+    }
+
+    if (activeProduct.id === overlayProductIdRef.current) return
+
+    overlayProductIdRef.current = activeProduct.id
+    overlayRef.current = null
+
+    loadOverlayImage(activeProduct)
+      .then((canvas) => {
+        if (overlayProductIdRef.current === activeProduct.id) {
+          overlayRef.current = canvas
+        }
+      })
+      .catch(() => {
+        // Overlay failed to load — no overlay will be shown
+      })
+  }, [activeProduct])
 
   const renderFrame = useCallback(() => {
     const video = videoRef.current
@@ -55,14 +82,13 @@ export function useFaceDetectionLoop({
           faceLastSeenRef.current = now
           setFaceDetected(true)
         } else {
-          // Keep cached landmarks for 500ms to avoid flicker
           if (now - faceLastSeenRef.current > 500) {
             cachedLandmarksRef.current = null
             setFaceDetected(false)
           }
         }
       } catch {
-        // Detection can fail on some frames, just skip
+        // Detection can fail on some frames
       }
       lastDetectionRef.current = now
     }
@@ -74,8 +100,8 @@ export function useFaceDetectionLoop({
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
     ctx.restore()
 
-    // Draw glasses overlay
-    if (cachedLandmarksRef.current && activeProduct) {
+    // Draw glasses overlay on face
+    if (cachedLandmarksRef.current && overlayRef.current) {
       const transform = computeGlassesTransform(
         cachedLandmarksRef.current,
         canvas.width,
@@ -83,10 +109,21 @@ export function useFaceDetectionLoop({
         true,
       )
 
+      const img = overlayRef.current
+      const targetWidth = transform.width * 1.3 * glassesScale
+      const aspectRatio = img.height / img.width
+      const targetHeight = targetWidth * aspectRatio
+
       ctx.save()
       ctx.translate(transform.centerX, transform.centerY)
       ctx.rotate(transform.rotation)
-      drawGlasses(ctx, 0, 0, transform.width * glassesScale, activeProduct)
+      ctx.drawImage(
+        img,
+        -targetWidth / 2,
+        -targetHeight / 2,
+        targetWidth,
+        targetHeight,
+      )
       ctx.restore()
     }
 

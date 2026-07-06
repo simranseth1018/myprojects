@@ -9,8 +9,9 @@ export interface GlassesTransform {
 
 // MediaPipe Face Mesh landmark indices
 const LEFT_EYE_OUTER = 33
+const LEFT_EYE_INNER = 133
 const RIGHT_EYE_OUTER = 263
-const NOSE_BRIDGE = 6
+const RIGHT_EYE_INNER = 362
 const LEFT_TEMPLE = 234
 const RIGHT_TEMPLE = 454
 
@@ -20,21 +21,28 @@ export function computeGlassesTransform(
   canvasHeight: number,
   isMirrored: boolean,
 ): GlassesTransform {
-  const noseBridge = landmarks[NOSE_BRIDGE]
-  const leftEye = landmarks[LEFT_EYE_OUTER]
-  const rightEye = landmarks[RIGHT_EYE_OUTER]
+  const leftEyeOuter = landmarks[LEFT_EYE_OUTER]
+  const leftEyeInner = landmarks[LEFT_EYE_INNER]
+  const rightEyeOuter = landmarks[RIGHT_EYE_OUTER]
+  const rightEyeInner = landmarks[RIGHT_EYE_INNER]
   const leftTemple = landmarks[LEFT_TEMPLE]
   const rightTemple = landmarks[RIGHT_TEMPLE]
 
-  // Convert normalized coords to pixel coords
-  let cx = noseBridge.x * canvasWidth
-  let cy = noseBridge.y * canvasHeight
+  // Eye centers
+  const leftEyeCX = (leftEyeOuter.x + leftEyeInner.x) / 2
+  const leftEyeCY = (leftEyeOuter.y + leftEyeInner.y) / 2
+  const rightEyeCX = (rightEyeOuter.x + rightEyeInner.x) / 2
+  const rightEyeCY = (rightEyeOuter.y + rightEyeInner.y) / 2
+
+  // Center between the two eyes (where the glasses bridge sits)
+  let cx = ((leftEyeCX + rightEyeCX) / 2) * canvasWidth
+  let cy = ((leftEyeCY + rightEyeCY) / 2) * canvasHeight
 
   if (isMirrored) {
     cx = canvasWidth - cx
   }
 
-  // Face width from temple to temple (in pixels)
+  // Face width from temple to temple
   let ltX = leftTemple.x * canvasWidth
   let rtX = rightTemple.x * canvasWidth
   if (isMirrored) {
@@ -44,10 +52,10 @@ export function computeGlassesTransform(
   const faceWidth = Math.abs(rtX - ltX)
 
   // Rotation from eye line
-  let leX = leftEye.x * canvasWidth
-  let leY = leftEye.y * canvasHeight
-  let reX = rightEye.x * canvasWidth
-  let reY = rightEye.y * canvasHeight
+  let leX = leftEyeOuter.x * canvasWidth
+  let leY = leftEyeOuter.y * canvasHeight
+  let reX = rightEyeOuter.x * canvasWidth
+  let reY = rightEyeOuter.y * canvasHeight
   if (isMirrored) {
     leX = canvasWidth - leX
     reX = canvasWidth - reX

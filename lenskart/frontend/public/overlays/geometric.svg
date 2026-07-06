@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 300" fill="none">
+  <!-- Left lens (hexagon) -->
+  <polygon points="210,45 320,85 320,195 210,235 100,195 100,85" fill="rgba(200,220,240,0.10)" stroke="#4A5568" stroke-width="6" stroke-linejoin="round"/>
+  <!-- Right lens (hexagon) -->
+  <polygon points="590,45 700,85 700,195 590,235 480,195 480,85" fill="rgba(200,220,240,0.10)" stroke="#4A5568" stroke-width="6" stroke-linejoin="round"/>
+  <!-- Bridge -->
+  <path d="M320 115 Q400 80 480 115" stroke="#4A5568" stroke-width="5" fill="none"/>
+  <!-- Left temple -->
+  <line x1="100" y1="130" x2="0" y2="140" stroke="#4A5568" stroke-width="5" stroke-linecap="round"/>
+  <!-- Right temple -->
+  <line x1="700" y1="130" x2="800" y2="140" stroke="#4A5568" stroke-width="5" stroke-linecap="round"/>
+</svg>

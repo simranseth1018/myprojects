@@ -16,41 +16,41 @@ AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=F
 # Using Unsplash with specific photo IDs that consistently show eyewear/fashion.
 # Format: https://images.unsplash.com/photo-{id}?w=600&q=80&auto=format&fit=crop
 IMGS = {
-    # Eyeglasses
+    # Eyeglasses — front-facing product shots on clean backgrounds
     "vc-acetate-classic":       "https://images.unsplash.com/photo-1574258495973-f010dfbb5371?w=600&q=80&auto=format&fit=crop",
     "lk-air-rimless-oval":      "https://images.unsplash.com/photo-1591076482161-42ce6da69f67?w=600&q=80&auto=format&fit=crop",
-    "jj-hexagonal-metal":       "https://images.unsplash.com/photo-1508296695146-257a814070b4?w=600&q=80&auto=format&fit=crop",
+    "jj-hexagonal-metal":       "https://images.unsplash.com/photo-1574169208507-84376144848b?w=600&q=80&auto=format&fit=crop",
     "lk-hustlr-half-rim":       "https://images.unsplash.com/photo-1577803645773-f96470509666?w=600&q=80&auto=format&fit=crop",
     "lk-air-cat-eye":           "https://images.unsplash.com/photo-1606471191009-63994c53433b?w=600&q=80&auto=format&fit=crop",
     "jj-round-acetate":         "https://images.unsplash.com/photo-1511499767150-a4d1dc0769b8?w=600&q=80&auto=format&fit=crop",
     "vc-square-titanium":       "https://images.unsplash.com/photo-1592503254549-d83d24a4dfab?w=600&q=80&auto=format&fit=crop",
-    "lk-air-geometric":         "https://images.unsplash.com/photo-1512201078372-9c52b5ec395d?w=600&q=80&auto=format&fit=crop",
+    "lk-air-geometric":         "https://images.unsplash.com/photo-1574258495973-f010dfbb5371?w=600&q=80&auto=format&fit=crop",
     "jj-cat-eye-acetate":       "https://images.unsplash.com/photo-1580870069867-74c57ee1bb07?w=600&q=80&auto=format&fit=crop",
-    "vc-oval-rimless":          "https://images.unsplash.com/photo-1473496169904-658ba7574b0d?w=600&q=80&auto=format&fit=crop",
-    # Sunglasses
-    "vc-aviator-classic":       "https://images.unsplash.com/photo-1509695507497-903c140c43b0?w=600&q=80&auto=format&fit=crop",
-    "jj-wayfarer-bold":         "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=600&q=80&auto=format&fit=crop",
-    "lk-air-round-retro":       "https://images.unsplash.com/photo-1560343090-f0409e92791a?w=600&q=80&auto=format&fit=crop",
-    "vc-cat-eye-sunglass":      "https://images.unsplash.com/photo-1553736277-ded353a2f2b5?w=600&q=80&auto=format&fit=crop",
-    "jj-square-sunglass":       "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=600&q=80&auto=format&fit=crop",
-    "lk-sport-wraparound":      "https://images.unsplash.com/photo-1605296867304-46d5465a13f1?w=600&q=80&auto=format&fit=crop",
+    "vc-oval-rimless":          "https://images.unsplash.com/photo-1591076482161-42ce6da69f67?w=600&q=80&auto=format&fit=crop",
+    # Sunglasses — Chashmah oversize golden-black sunglasses
+    "vc-aviator-classic":       "https://chashmah.com/wp-content/uploads/2024/01/IMG20240115190554.webp",
+    "jj-wayfarer-bold":         "https://chashmah.com/wp-content/uploads/2024/01/IMG20240115190554.webp",
+    "lk-air-round-retro":       "https://chashmah.com/wp-content/uploads/2024/01/IMG20240115190554.webp",
+    "vc-cat-eye-sunglass":      "https://chashmah.com/wp-content/uploads/2024/01/IMG20240115190554.webp",
+    "jj-square-sunglass":       "https://chashmah.com/wp-content/uploads/2024/01/IMG20240115190554.webp",
+    "lk-sport-wraparound":      "https://chashmah.com/wp-content/uploads/2024/01/IMG20240115190554.webp",
     # Computer glasses
-    "lk-blu-rectangle":         "https://images.unsplash.com/photo-1498075702571-ecb018f3752d?w=600&q=80&auto=format&fit=crop",
-    "lk-blu-round":             "https://images.unsplash.com/photo-1583394293214-bf9bfa5c5f29?w=600&q=80&auto=format&fit=crop",
-    "jj-blu-oval":              "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=600&q=80&auto=format&fit=crop",
+    "lk-blu-rectangle":         "https://images.unsplash.com/photo-1574258495973-f010dfbb5371?w=600&q=80&auto=format&fit=crop",
+    "lk-blu-round":             "https://images.unsplash.com/photo-1511499767150-a4d1dc0769b8?w=600&q=80&auto=format&fit=crop",
+    "jj-blu-oval":              "https://images.unsplash.com/photo-1591076482161-42ce6da69f67?w=600&q=80&auto=format&fit=crop",
     # Kids
-    "lk-junior-flex":           "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=600&q=80&auto=format&fit=crop",
-    "lk-junior-round":          "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=600&q=80&auto=format&fit=crop",
-    "jj-junior-rectangle":      "https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?w=600&q=80&auto=format&fit=crop",
+    "lk-junior-flex":           "https://images.unsplash.com/photo-1577803645773-f96470509666?w=600&q=80&auto=format&fit=crop",
+    "lk-junior-round":          "https://images.unsplash.com/photo-1511499767150-a4d1dc0769b8?w=600&q=80&auto=format&fit=crop",
+    "jj-junior-rectangle":      "https://images.unsplash.com/photo-1574258495973-f010dfbb5371?w=600&q=80&auto=format&fit=crop",
     # Premium
-    "jj-premium-titanium":      "https://images.unsplash.com/photo-1543076659-9380cdf10613?w=600&q=80&auto=format&fit=crop",
-    "vc-premium-wood":          "https://images.unsplash.com/photo-1556306535-0f09a537f0a3?w=600&q=80&auto=format&fit=crop",
-    "lk-air-ultra-thin":        "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600&q=80&auto=format&fit=crop",
-    "vc-gradient-aviator":      "https://images.unsplash.com/photo-1473496169904-658ba7574b0d?w=600&q=80&auto=format&fit=crop",
-    "jj-oversized-square":      "https://images.unsplash.com/photo-1590736704728-f4730bb30770?w=600&q=80&auto=format&fit=crop",
-    "lk-clip-on-magnet":        "https://images.unsplash.com/photo-1542144582-1ba00456b5e3?w=600&q=80&auto=format&fit=crop",
-    "vc-retro-browline":        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&q=80&auto=format&fit=crop",
-    "jj-slim-rectangle":        "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=600&q=80&auto=format&fit=crop",
+    "jj-premium-titanium":      "https://images.unsplash.com/photo-1592503254549-d83d24a4dfab?w=600&q=80&auto=format&fit=crop",
+    "vc-premium-wood":          "https://images.unsplash.com/photo-1574258495973-f010dfbb5371?w=600&q=80&auto=format&fit=crop",
+    "lk-air-ultra-thin":        "https://images.unsplash.com/photo-1591076482161-42ce6da69f67?w=600&q=80&auto=format&fit=crop",
+    "vc-gradient-aviator":      "https://images.unsplash.com/photo-1509695507497-903c140c43b0?w=600&q=80&auto=format&fit=crop",
+    "jj-oversized-square":      "https://images.unsplash.com/photo-1592503254549-d83d24a4dfab?w=600&q=80&auto=format&fit=crop",
+    "lk-clip-on-magnet":        "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=600&q=80&auto=format&fit=crop",
+    "vc-retro-browline":        "https://images.unsplash.com/photo-1577803645773-f96470509666?w=600&q=80&auto=format&fit=crop",
+    "jj-slim-rectangle":        "https://images.unsplash.com/photo-1574258495973-f010dfbb5371?w=600&q=80&auto=format&fit=crop",
 }
 
 PRODUCTS = [

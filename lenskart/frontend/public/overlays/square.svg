@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 300" fill="none">
+  <!-- Left lens -->
+  <rect x="70" y="55" width="250" height="190" rx="8" ry="8" fill="rgba(200,220,240,0.10)" stroke="#333" stroke-width="7"/>
+  <!-- Right lens -->
+  <rect x="480" y="55" width="250" height="190" rx="8" ry="8" fill="rgba(200,220,240,0.10)" stroke="#333" stroke-width="7"/>
+  <!-- Bridge -->
+  <path d="M320 120 Q400 85 480 120" stroke="#333" stroke-width="6" fill="none"/>
+  <!-- Left temple -->
+  <line x1="70" y1="130" x2="0" y2="140" stroke="#333" stroke-width="5" stroke-linecap="round"/>
+  <!-- Right temple -->
+  <line x1="730" y1="130" x2="800" y2="140" stroke="#333" stroke-width="5" stroke-linecap="round"/>
+  <!-- Nose pads -->
+  <ellipse cx="325" cy="180" rx="6" ry="10" stroke="#555" stroke-width="2" fill="none" transform="rotate(-15 325 180)"/>
+  <ellipse cx="475" cy="180" rx="6" ry="10" stroke="#555" stroke-width="2" fill="none" transform="rotate(15 475 180)"/>
+</svg>
