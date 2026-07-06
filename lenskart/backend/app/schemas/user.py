@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional, List
 import uuid
 from datetime import datetime, date
@@ -11,30 +11,32 @@ class UpdateProfileIn(BaseModel):
 
 
 class AddressIn(BaseModel):
-    name: str
+    model_config = ConfigDict(populate_by_name=True)
+
+    name: str = Field(alias="fullName")
     phone: str
-    address_line1: str
-    address_line2: Optional[str] = None
+    address_line1: str = Field(alias="line1")
+    address_line2: Optional[str] = Field(None, alias="line2")
     city: str
     state: str
     pincode: str
     type: Optional[str] = "HOME"
-    is_default: Optional[bool] = False
+    is_default: Optional[bool] = Field(False, alias="isDefault")
 
 
 class AddressOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: uuid.UUID
-    name: str
+    fullName: str = Field(validation_alias="name")
     phone: str
-    address_line1: str
-    address_line2: Optional[str]
-    city: Optional[str]
-    state: Optional[str]
-    pincode: Optional[str]
+    line1: str = Field(validation_alias="address_line1")
+    line2: Optional[str] = Field(None, validation_alias="address_line2")
+    city: Optional[str] = None
+    state: Optional[str] = None
+    pincode: Optional[str] = None
     type: str
-    is_default: bool
+    isDefault: bool = Field(validation_alias="is_default")
 
 
 class PrescriptionIn(BaseModel):

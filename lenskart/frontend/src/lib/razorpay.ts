@@ -59,7 +59,42 @@ export interface InitiatePaymentParams {
   onDismiss?: () => void
 }
 
+function isRazorpayConfigured(): boolean {
+  const key = import.meta.env.VITE_RAZORPAY_KEY_ID
+  return !!key && key !== 'rzp_test_xxxxxxxxxxxxxxxx' && !key.startsWith('your-')
+}
+
+/**
+ * Mock payment flow for development without Razorpay credentials.
+ * Shows a confirm dialog simulating payment, then calls onSuccess with mock data.
+ */
+function mockPayment(params: InitiatePaymentParams): void {
+  const confirmed = window.confirm(
+    `[Mock Payment]\n\n` +
+    `Amount: ₹${params.amount.toFixed(2)}\n` +
+    `Order: ${params.razorpayOrderId}\n\n` +
+    `Click OK to simulate successful payment\n` +
+    `Click Cancel to dismiss`
+  )
+
+  if (confirmed) {
+    params.onSuccess({
+      razorpay_payment_id: `pay_mock_${Date.now()}`,
+      razorpay_order_id: params.razorpayOrderId,
+      razorpay_signature: 'mock_signature_for_dev',
+    })
+  } else {
+    params.onDismiss?.()
+  }
+}
+
 export async function initiateRazorpayPayment(params: InitiatePaymentParams): Promise<void> {
+  // Use mock payment if Razorpay is not configured
+  if (!isRazorpayConfigured()) {
+    mockPayment(params)
+    return
+  }
+
   const loaded = await loadRazorpayScript()
   if (!loaded) throw new Error('Failed to load Razorpay SDK')
 

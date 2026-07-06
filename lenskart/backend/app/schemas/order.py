@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional, List
 from decimal import Decimal
 import uuid
@@ -6,58 +6,62 @@ from datetime import datetime
 
 
 class PlaceOrderIn(BaseModel):
-    address_id: uuid.UUID
-    payment_method: str
-    coupon_code: Optional[str] = None
+    model_config = ConfigDict(populate_by_name=True)
+
+    address_id: uuid.UUID = Field(alias="addressId")
+    payment_method: str = Field(alias="paymentMethod")
+    coupon_code: Optional[str] = Field(None, alias="couponCode")
 
 
 class PaymentVerifyIn(BaseModel):
-    razorpay_order_id: str
-    razorpay_payment_id: str
-    razorpay_signature: str
+    model_config = ConfigDict(populate_by_name=True)
+
+    razorpay_order_id: str = Field(alias="razorpayOrderId")
+    razorpay_payment_id: str = Field(alias="razorpayPaymentId")
+    razorpay_signature: str = Field(alias="razorpaySignature")
 
 
 class TrackingOut(BaseModel):
     status: str
-    message: Optional[str]
-    location: Optional[str]
+    message: Optional[str] = None
+    location: Optional[str] = None
     timestamp: datetime
 
 
 class OrderItemOut(BaseModel):
     id: uuid.UUID
-    product_id: uuid.UUID
-    product_name: str
-    product_image_url: Optional[str]
-    variant_color: Optional[str]
-    lens_option_name: Optional[str]
+    productId: uuid.UUID
+    productName: str
+    productImageUrl: Optional[str] = None
+    variantColor: Optional[str] = None
+    lensOptionName: Optional[str] = None
     quantity: int
-    unit_price: Decimal
-    total_price: Decimal
+    unitPrice: Decimal
+    totalPrice: Decimal
 
 
 class ShippingAddress(BaseModel):
-    name: Optional[str]
-    phone: Optional[str]
-    address: Optional[str]
-    city: Optional[str]
-    state: Optional[str]
-    pincode: Optional[str]
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    pincode: Optional[str] = None
 
 
 class OrderOut(BaseModel):
     id: uuid.UUID
-    order_number: str
+    orderNumber: str
     status: str
-    payment_status: str
-    payment_method: Optional[str]
+    paymentStatus: str
+    paymentMethod: Optional[str] = None
     subtotal: Decimal
-    shipping_fee: Decimal
-    discount_amount: Decimal
-    total_amount: Decimal
-    coupon_code: Optional[str]
-    shipping_address: ShippingAddress
+    shippingFee: Decimal
+    discountAmount: Decimal
+    totalAmount: Decimal
+    couponCode: Optional[str] = None
+    shippingAddress: ShippingAddress
     items: List[OrderItemOut]
-    tracking_history: List[TrackingOut]
-    estimated_delivery: Optional[datetime]
-    created_at: datetime
+    trackingHistory: List[TrackingOut]
+    estimatedDelivery: Optional[datetime] = None
+    createdAt: datetime

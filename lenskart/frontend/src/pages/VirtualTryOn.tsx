@@ -3,216 +3,15 @@ import { useSearchParams, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Upload, Download, RotateCcw, ChevronLeft, ChevronRight,
-  ImagePlus, Glasses, Sliders, Info, Check,
+  ImagePlus, Glasses, Sliders, Info, Check, Video, Camera, VideoOff,
 } from 'lucide-react'
 import { useAppDispatch } from '@/store'
 import { setActiveProduct, setTryOnMode, setCapturedImage } from '@/store/slices/tryOnSlice'
 import { useFeaturedProducts } from '@/hooks/api/useProducts'
 import { formatPrice, cn } from '@/lib/utils'
+import { drawGlasses } from '@/lib/glassesRenderer'
+import WebcamTryOn from '@/components/ar/WebcamTryOn'
 import type { Product } from '@/types/product'
-
-// ─── Frame color palette ──────────────────────────────────────────────────────
-const MATERIAL_COLOR: Record<string, string> = {
-  ACETATE:  '#5C3317',
-  METAL:    '#7A8B8B',
-  TITANIUM: '#4A5568',
-  TR90:     '#1A1A2E',
-  WOOD:     '#6B3A2A',
-  MIXED:    '#4A4A4A',
-}
-
-function frameColor(product: Product): string {
-  return MATERIAL_COLOR[product.frameMaterial ?? ''] ?? '#222222'
-}
-
-// ─── Canvas helpers ───────────────────────────────────────────────────────────
-function roundedRect(
-  ctx: CanvasRenderingContext2D,
-  x: number, y: number, w: number, h: number, r: number,
-) {
-  const radius = Math.min(r, w / 2, h / 2)
-  ctx.moveTo(x + radius, y)
-  ctx.lineTo(x + w - radius, y)
-  ctx.quadraticCurveTo(x + w, y, x + w, y + radius)
-  ctx.lineTo(x + w, y + h - radius)
-  ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h)
-  ctx.lineTo(x + radius, y + h)
-  ctx.quadraticCurveTo(x, y + h, x, y + h - radius)
-  ctx.lineTo(x, y + radius)
-  ctx.quadraticCurveTo(x, y, x + radius, y)
-  ctx.closePath()
-}
-
-function drawLensPath(
-  ctx: CanvasRenderingContext2D,
-  cx: number, cy: number, w: number, h: number,
-  shape: string,
-) {
-  ctx.beginPath()
-  switch (shape) {
-    case 'ROUND':
-      ctx.ellipse(cx, cy, w / 2, w / 2, 0, 0, Math.PI * 2)
-      break
-    case 'OVAL':
-      ctx.ellipse(cx, cy, w / 2, h / 2, 0, 0, Math.PI * 2)
-      break
-    case 'SQUARE':
-      roundedRect(ctx, cx - w / 2, cy - h / 2, w, h, 3)
-      break
-    case 'RECTANGLE':
-      roundedRect(ctx, cx - w / 2, cy - h / 2, w, h, 8)
-      break
-    case 'AVIATOR': {
-      // Teardrop: narrower top, wider bottom
-      const rx = w / 2
-      const ryTop = h * 0.35
-      const ryBot = h * 0.65
-      ctx.moveTo(cx, cy - ryTop)
-      ctx.bezierCurveTo(cx + rx * 1.1, cy - ryTop, cx + rx, cy + ryBot * 0.6, cx, cy + ryBot)
-      ctx.bezierCurveTo(cx - rx, cy + ryBot * 0.6, cx - rx * 1.1, cy - ryTop, cx, cy - ryTop)
-      break
-    }
-    case 'CAT_EYE': {
-      const lx = cx - w / 2, rx = cx + w / 2
-      const top = cy - h / 2, bot = cy + h / 2
-      const lift = h * 0.28
-      ctx.moveTo(lx + w * 0.15, bot)
-      ctx.quadraticCurveTo(lx, bot, lx, cy)
-      ctx.quadraticCurveTo(lx, top + 4, lx + w * 0.35, top)
-      ctx.bezierCurveTo(rx - w * 0.2, top, rx, top - lift, rx, cy - h * 0.1)
-      ctx.quadraticCurveTo(rx, bot, lx + w * 0.15, bot)
-      break
-    }
-    case 'WAYFARER': {
-      const lx = cx - w / 2, rx = cx + w / 2
-      const top = cy - h / 2, bot = cy + h / 2
-      ctx.moveTo(lx + 8, top)
-      ctx.lineTo(rx - 5, top - 4)
-      ctx.quadraticCurveTo(rx, top - 4, rx, top + 5)
-      ctx.lineTo(rx, bot - 7)
-      ctx.quadraticCurveTo(rx, bot, rx - 7, bot)
-      ctx.lineTo(lx + 7, bot)
-      ctx.quadraticCurveTo(lx, bot, lx, bot - 7)
-      ctx.lineTo(lx, top + 6)
-      ctx.quadraticCurveTo(lx, top, lx + 8, top)
-      break
-    }
-    case 'GEOMETRIC': {
-      // Hexagon
-      const r = Math.min(w, h) * 0.48
-      for (let i = 0; i < 6; i++) {
-        const a = (Math.PI / 3) * i - Math.PI / 6
-        if (i === 0) ctx.moveTo(cx + r * Math.cos(a), cy + r * Math.sin(a))
-        else ctx.lineTo(cx + r * Math.cos(a), cy + r * Math.sin(a))
-      }
-      ctx.closePath()
-      break
-    }
-    default:
-      roundedRect(ctx, cx - w / 2, cy - h / 2, w, h, 8)
-  }
-}
-
-function drawGlasses(
-  ctx: CanvasRenderingContext2D,
-  cx: number,
-  cy: number,
-  baseSize: number,
-  product: Product,
-) {
-  const shape = product.frameShape ?? 'RECTANGLE'
-  const type  = product.frameType  ?? 'FULL_RIM'
-  const color = frameColor(product)
-
-  const lensW     = baseSize * 0.42
-  const lensH     = shape === 'ROUND'    ? lensW * 0.82
-                  : shape === 'AVIATOR'  ? lensW * 0.88
-                  : shape === 'CAT_EYE'  ? lensW * 0.65
-                  : shape === 'OVAL'     ? lensW * 0.72
-                  : lensW * 0.60
-
-  const bridge    = baseSize * 0.10
-  const templeLen = baseSize * 0.58
-  const rimW      = type === 'FULL_RIM' ? 3.5 : type === 'HALF_RIM' ? 2.5 : 1.5
-
-  const leftCx  = cx - bridge / 2 - lensW / 2
-  const rightCx = cx + bridge / 2 + lensW / 2
-
-  ctx.save()
-
-  // Lens tint fill
-  const lensAlpha = shape === 'AVIATOR' || product.isFeatured ? 0.18 : 0.12
-  ctx.fillStyle = `rgba(180,210,240,${lensAlpha})`
-
-  for (const lcx of [leftCx, rightCx]) {
-    drawLensPath(ctx, lcx, cy, lensW, lensH, shape)
-    ctx.fill()
-  }
-
-  // Rim stroke
-  ctx.strokeStyle = color
-  ctx.lineWidth = rimW
-  ctx.lineJoin = 'round'
-  ctx.lineCap  = 'round'
-
-  if (type === 'FULL_RIM') {
-    for (const lcx of [leftCx, rightCx]) {
-      drawLensPath(ctx, lcx, cy, lensW, lensH, shape)
-      ctx.stroke()
-    }
-  } else if (type === 'HALF_RIM') {
-    // Only bottom half
-    ctx.save()
-    for (const lcx of [leftCx, rightCx]) {
-      ctx.save()
-      ctx.beginPath()
-      ctx.rect(lcx - lensW, cy, lensW * 2, lensH * 2)
-      ctx.clip()
-      drawLensPath(ctx, lcx, cy, lensW, lensH, shape)
-      ctx.stroke()
-      ctx.restore()
-    }
-    ctx.restore()
-  }
-  // RIMLESS: no lens stroke
-
-  // Bridge
-  ctx.beginPath()
-  ctx.moveTo(leftCx + lensW / 2, cy - lensH * 0.10)
-  ctx.quadraticCurveTo(cx, cy - lensH * 0.32, rightCx - lensW / 2, cy - lensH * 0.10)
-  ctx.strokeStyle = color
-  ctx.lineWidth = rimW
-  ctx.stroke()
-
-  // Nose pads (metal / rimless frames)
-  if (type === 'RIMLESS' || product.frameMaterial === 'METAL' || product.frameMaterial === 'TITANIUM') {
-    for (const [padX, padY] of [
-      [leftCx + lensW * 0.2, cy + lensH * 0.10],
-      [rightCx - lensW * 0.2, cy + lensH * 0.10],
-    ] as [number, number][]) {
-      ctx.beginPath()
-      ctx.ellipse(padX, padY, 4, 6, Math.PI / 8, 0, Math.PI * 2)
-      ctx.strokeStyle = color
-      ctx.lineWidth = 1.5
-      ctx.stroke()
-    }
-  }
-
-  // Temples
-  ctx.strokeStyle = color
-  ctx.lineWidth = rimW * 0.9
-  ctx.beginPath()
-  ctx.moveTo(leftCx - lensW / 2, cy - lensH * 0.05)
-  ctx.lineTo(leftCx - lensW / 2 - templeLen, cy + lensH * 0.05)
-  ctx.stroke()
-
-  ctx.beginPath()
-  ctx.moveTo(rightCx + lensW / 2, cy - lensH * 0.05)
-  ctx.lineTo(rightCx + lensW / 2 + templeLen, cy + lensH * 0.05)
-  ctx.stroke()
-
-  ctx.restore()
-}
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function VirtualTryOn() {
@@ -238,6 +37,7 @@ export default function VirtualTryOn() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const imgRef    = useRef<HTMLImageElement | null>(null)
 
+  const [viewMode, setViewMode]       = useState<'photo' | 'webcam'>('photo')
   const [hasImage, setHasImage]       = useState(false)
   const [glassesPos, setGlassesPos]   = useState({ x: 0.5, y: 0.38 })
   const [glassesScale, setGlassesScale] = useState(1)
@@ -395,7 +195,7 @@ export default function VirtualTryOn() {
         </div>
         <div className="hidden sm:flex items-center gap-2 text-xs text-gray-400">
           <Info className="w-4 h-4 flex-shrink-0" />
-          Upload a front-facing photo for best results
+          {viewMode === 'photo' ? 'Upload a front-facing photo for best results' : 'Position your face in the frame'}
         </div>
       </div>
 
@@ -404,93 +204,146 @@ export default function VirtualTryOn() {
         {/* ── Left: canvas area ── */}
         <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 gap-4">
 
-          {/* Upload dropzone — shown only when no image */}
-          {!hasImage && (
-            <motion.label
-              initial={{ opacity: 0, scale: 0.97 }}
-              animate={{ opacity: 1, scale: 1 }}
+          {/* Mode toggle */}
+          <div className="flex items-center gap-1 p-1 bg-gray-800/80 rounded-xl">
+            <button
+              onClick={() => setViewMode('photo')}
               className={cn(
-                'w-full max-w-lg aspect-[3/4] border-2 border-dashed rounded-3xl',
-                'flex flex-col items-center justify-center gap-5 cursor-pointer transition-all duration-200',
-                isDragOver
-                  ? 'border-brand-400 bg-brand-950/40 scale-[1.01]'
-                  : 'border-gray-700 hover:border-gray-500 bg-gray-900/40',
+                'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200',
+                viewMode === 'photo'
+                  ? 'bg-brand-600 text-white shadow-md'
+                  : 'text-gray-400 hover:text-white',
               )}
-              onDragOver={(e) => { e.preventDefault(); setIsDragOver(true) }}
-              onDragLeave={() => setIsDragOver(false)}
-              onDrop={onDrop}
             >
-              <input type="file" accept="image/*" className="hidden" onChange={onFileInput} />
-              <div className={cn(
-                'w-20 h-20 rounded-full flex items-center justify-center transition-colors',
-                isDragOver ? 'bg-brand-900' : 'bg-gray-800',
-              )}>
-                <ImagePlus className="w-9 h-9 text-brand-400" />
-              </div>
-              <div className="text-center px-6">
-                <p className="text-lg font-semibold text-gray-200">Drop your photo here</p>
-                <p className="text-sm text-gray-500 mt-1">or click to browse</p>
-              </div>
-              <div className="text-center text-xs text-gray-600 space-y-1">
-                <p>JPG · PNG · WEBP supported</p>
-                <p>Use a clear, front-facing photo</p>
-              </div>
-            </motion.label>
-          )}
-
-          {/*
-            Canvas is ALWAYS in the DOM so canvasRef is never null.
-            We just hide it with CSS until a photo is loaded.
-          */}
-          <div className={cn('w-full max-w-lg', !hasImage && 'hidden')}>
-            <canvas
-              ref={canvasRef}
+              <ImagePlus className="w-4 h-4" />
+              Upload Photo
+            </button>
+            <button
+              onClick={() => setViewMode('webcam')}
               className={cn(
-                'w-full rounded-2xl shadow-2xl select-none touch-none',
-                isDragging ? 'cursor-grabbing' : 'cursor-grab',
+                'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200',
+                viewMode === 'webcam'
+                  ? 'bg-brand-600 text-white shadow-md'
+                  : 'text-gray-400 hover:text-white',
               )}
-              onMouseDown={startDrag}
-              onMouseMove={moveDrag}
-              onMouseUp={endDrag}
-              onMouseLeave={endDrag}
-              onTouchStart={startDrag}
-              onTouchMove={moveDrag}
-              onTouchEnd={endDrag}
-            />
-            <p className="text-center text-xs text-gray-500 mt-2">
-              Drag the glasses to reposition · Use the slider to resize
-            </p>
+            >
+              <Video className="w-4 h-4" />
+              Live Camera
+            </button>
           </div>
 
-          {/* Action bar */}
-          {hasImage && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex flex-wrap items-center justify-center gap-2"
-            >
-              <button onClick={handleNewPhoto} className="btn-secondary text-sm gap-2">
-                <Upload className="w-4 h-4" />
-                New Photo
-              </button>
-              <button onClick={handleReset} className="btn-secondary text-sm gap-2">
-                <RotateCcw className="w-4 h-4" />
-                Reset
-              </button>
-              <button
-                onClick={handleDownload}
-                className={cn(
-                  'btn-primary text-sm gap-2 min-w-[140px] justify-center transition-colors',
-                  downloaded && '!bg-green-600',
-                )}
+          <AnimatePresence mode="wait">
+            {viewMode === 'photo' ? (
+              <motion.div
+                key="photo"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2 }}
+                className="w-full flex flex-col items-center gap-4"
               >
-                {downloaded
-                  ? <><Check className="w-4 h-4" /> Saved!</>
-                  : <><Download className="w-4 h-4" /> Download Look</>
-                }
-              </button>
-            </motion.div>
-          )}
+                {/* Upload dropzone — shown only when no image */}
+                {!hasImage && (
+                  <motion.label
+                    initial={{ opacity: 0, scale: 0.97 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className={cn(
+                      'w-full max-w-lg aspect-[3/4] border-2 border-dashed rounded-3xl',
+                      'flex flex-col items-center justify-center gap-5 cursor-pointer transition-all duration-200',
+                      isDragOver
+                        ? 'border-brand-400 bg-brand-950/40 scale-[1.01]'
+                        : 'border-gray-700 hover:border-gray-500 bg-gray-900/40',
+                    )}
+                    onDragOver={(e) => { e.preventDefault(); setIsDragOver(true) }}
+                    onDragLeave={() => setIsDragOver(false)}
+                    onDrop={onDrop}
+                  >
+                    <input type="file" accept="image/*" className="hidden" onChange={onFileInput} />
+                    <div className={cn(
+                      'w-20 h-20 rounded-full flex items-center justify-center transition-colors',
+                      isDragOver ? 'bg-brand-900' : 'bg-gray-800',
+                    )}>
+                      <ImagePlus className="w-9 h-9 text-brand-400" />
+                    </div>
+                    <div className="text-center px-6">
+                      <p className="text-lg font-semibold text-gray-200">Drop your photo here</p>
+                      <p className="text-sm text-gray-500 mt-1">or click to browse</p>
+                    </div>
+                    <div className="text-center text-xs text-gray-600 space-y-1">
+                      <p>JPG · PNG · WEBP supported</p>
+                      <p>Use a clear, front-facing photo</p>
+                    </div>
+                  </motion.label>
+                )}
+
+                {/* Canvas for photo mode */}
+                <div className={cn('w-full max-w-lg', !hasImage && 'hidden')}>
+                  <canvas
+                    ref={canvasRef}
+                    className={cn(
+                      'w-full rounded-2xl shadow-2xl select-none touch-none',
+                      isDragging ? 'cursor-grabbing' : 'cursor-grab',
+                    )}
+                    onMouseDown={startDrag}
+                    onMouseMove={moveDrag}
+                    onMouseUp={endDrag}
+                    onMouseLeave={endDrag}
+                    onTouchStart={startDrag}
+                    onTouchMove={moveDrag}
+                    onTouchEnd={endDrag}
+                  />
+                  <p className="text-center text-xs text-gray-500 mt-2">
+                    Drag the glasses to reposition · Use the slider to resize
+                  </p>
+                </div>
+
+                {/* Photo action bar */}
+                {hasImage && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex flex-wrap items-center justify-center gap-2"
+                  >
+                    <button onClick={handleNewPhoto} className="btn-secondary text-sm gap-2">
+                      <Upload className="w-4 h-4" />
+                      New Photo
+                    </button>
+                    <button onClick={handleReset} className="btn-secondary text-sm gap-2">
+                      <RotateCcw className="w-4 h-4" />
+                      Reset
+                    </button>
+                    <button
+                      onClick={handleDownload}
+                      className={cn(
+                        'btn-primary text-sm gap-2 min-w-[140px] justify-center transition-colors',
+                        downloaded && '!bg-green-600',
+                      )}
+                    >
+                      {downloaded
+                        ? <><Check className="w-4 h-4" /> Saved!</>
+                        : <><Download className="w-4 h-4" /> Download Look</>
+                      }
+                    </button>
+                  </motion.div>
+                )}
+              </motion.div>
+            ) : (
+              <motion.div
+                key="webcam"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.2 }}
+                className="w-full flex flex-col items-center gap-4"
+              >
+                <WebcamTryOn
+                  activeProduct={activeProduct}
+                  glassesScale={glassesScale}
+                  onStopCamera={() => setViewMode('photo')}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* ── Right: controls ── */}

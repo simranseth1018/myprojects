@@ -10,7 +10,7 @@ import {
   Package, Check, Loader2, Tag,
 } from 'lucide-react'
 import { useAppSelector } from '@/store'
-import { useAddresses } from '@/hooks/api/useUser'
+import { useAddresses, useAddAddress } from '@/hooks/api/useUser'
 import { usePlaceOrder, useVerifyPayment, useApplyCoupon } from '@/hooks/api/useOrders'
 import { initiateRazorpayPayment } from '@/lib/razorpay'
 import { formatPrice, cn } from '@/lib/utils'
@@ -20,13 +20,13 @@ import { toast } from 'sonner'
 type Step = 'address' | 'payment' | 'review'
 
 const addressSchema = z.object({
-  fullName: z.string().min(2),
+  fullName: z.string().min(2, 'Enter your full name'),
   phone: z.string().regex(/^[6-9]\d{9}$/, 'Invalid phone'),
-  line1: z.string().min(5),
+  line1: z.string().min(5, 'Enter your address'),
   line2: z.string().optional(),
-  city: z.string().min(2),
-  state: z.string().min(2),
-  pincode: z.string().regex(/^[1-9][0-9]{5}$/),
+  city: z.string().min(2, 'Enter your city'),
+  state: z.string().min(2, 'Enter your state'),
+  pincode: z.string().regex(/^[1-9][0-9]{5}$/, 'Invalid pincode'),
   type: z.enum(['HOME', 'WORK', 'OTHER']),
 })
 
@@ -40,12 +40,13 @@ export default function Checkout() {
   const [step, setStep] = useState<Step>('address')
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null)
   const [addNewAddress, setAddNewAddress] = useState(false)
-  const [paymentMethod, setPaymentMethod] = useState<'RAZORPAY' | 'COD'>('RAZORPAY')
+  const [paymentMethod, setPaymentMethod] = useState<'RAZORPAY' | 'COD'>('COD')
   const [couponCode, setCouponCode] = useState('')
   const [discount, setDiscount] = useState(0)
   const [couponApplied, setCouponApplied] = useState(false)
 
-  const { data: addresses } = useAddresses()
+  const { data: addresses, refetch: refetchAddresses } = useAddresses()
+  const addAddress = useAddAddress()
   const placeOrder = usePlaceOrder()
   const verifyPayment = useVerifyPayment()
   const applyCoupon = useApplyCoupon()
@@ -77,8 +78,51 @@ export default function Checkout() {
     } catch {}
   }
 
+  // Save new address and proceed to payment
+  const handleAddressSubmit = async (data: AddressFormData) => {
+    try {
+      const result = await addAddress.mutateAsync({
+        type: data.type,
+        fullName: data.fullName,
+        phone: data.phone,
+        line1: data.line1,
+        line2: data.line2,
+        city: data.city,
+        state: data.state,
+        pincode: data.pincode,
+        isDefault: true,
+      } as Omit<Address, 'id' | 'userId'>)
+      setSelectedAddressId(result.id)
+      await refetchAddresses()
+      setAddNewAddress(false)
+      setStep('payment')
+    } catch {
+      toast.error('Failed to save address')
+    }
+  }
+
+  const handleContinueToPayment = () => {
+    if (addNewAddress || !addresses || addresses.length === 0) {
+      // Trigger form validation and submit
+      handleSubmit(handleAddressSubmit)()
+      return
+    }
+    // Using existing address
+    if (!selectedAddressId && addresses?.length > 0) {
+      const defaultAddr = addresses.find((a: Address) => a.isDefault)
+      setSelectedAddressId(defaultAddr?.id ?? addresses[0].id)
+    }
+    setStep('payment')
+  }
+
   const handlePlaceOrder = async () => {
-    const addressId = selectedAddressId ?? (addresses?.[0]?.id ?? undefined)
+    const addressId = selectedAddressId ?? addresses?.find((a: Address) => a.isDefault)?.id ?? addresses?.[0]?.id
+
+    if (!addressId) {
+      toast.error('Please add a delivery address first')
+      setStep('address')
+      return
+    }
 
     try {
       const result = await placeOrder.mutateAsync({
@@ -92,6 +136,7 @@ export default function Checkout() {
         return
       }
 
+      // Online payment via Razorpay
       await initiateRazorpayPayment({
         orderId: result.order.id,
         razorpayOrderId: result.razorpayOrderId,
@@ -110,7 +155,7 @@ export default function Checkout() {
           toast.success('Payment successful! Order placed.')
         },
         onDismiss: () => {
-          toast.error('Payment cancelled')
+          toast.error('Payment cancelled. Your order is saved — you can retry payment later.')
         },
       })
     } catch {
@@ -223,7 +268,7 @@ export default function Checkout() {
                               <p className="text-sm text-gray-600 mt-0.5">
                                 {addr.line1}{addr.line2 ? `, ${addr.line2}` : ''}, {addr.city}, {addr.state} — {addr.pincode}
                               </p>
-                              <p className="text-sm text-gray-500 mt-0.5">📞 {addr.phone}</p>
+                              <p className="text-sm text-gray-500 mt-0.5">Phone: {addr.phone}</p>
                             </div>
                           </label>
                         ))}
@@ -238,7 +283,7 @@ export default function Checkout() {
 
                     {/* New address form */}
                     {(addNewAddress || !addresses || addresses.length === 0) && (
-                      <form className="space-y-4">
+                      <form onSubmit={handleSubmit(handleAddressSubmit)} className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                           <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-1">Full Name</label>
@@ -255,6 +300,7 @@ export default function Checkout() {
                         <div>
                           <label className="block text-sm font-semibold text-gray-700 mb-1">Address Line 1</label>
                           <input {...register('line1')} className={cn('input-field', errors.line1 && 'border-red-300')} placeholder="House/Flat no., Street name" />
+                          {errors.line1 && <p className="text-xs text-red-500 mt-1">{errors.line1.message}</p>}
                         </div>
 
                         <div>
@@ -266,14 +312,17 @@ export default function Checkout() {
                           <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-1">City</label>
                             <input {...register('city')} className={cn('input-field', errors.city && 'border-red-300')} />
+                            {errors.city && <p className="text-xs text-red-500 mt-1">{errors.city.message}</p>}
                           </div>
                           <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-1">State</label>
                             <input {...register('state')} className={cn('input-field', errors.state && 'border-red-300')} />
+                            {errors.state && <p className="text-xs text-red-500 mt-1">{errors.state.message}</p>}
                           </div>
                           <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-1">Pincode</label>
                             <input {...register('pincode')} className={cn('input-field', errors.pincode && 'border-red-300')} maxLength={6} />
+                            {errors.pincode && <p className="text-xs text-red-500 mt-1">{errors.pincode.message}</p>}
                           </div>
                         </div>
 
@@ -289,10 +338,15 @@ export default function Checkout() {
                     )}
 
                     <button
-                      onClick={() => setStep('payment')}
+                      onClick={handleContinueToPayment}
+                      disabled={addAddress.isPending}
                       className="btn-primary w-full mt-6 py-3 justify-center gap-2"
                     >
-                      Continue to Payment <ChevronRight className="w-4 h-4" />
+                      {addAddress.isPending ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" /> Saving address...</>
+                      ) : (
+                        <>Continue to Payment <ChevronRight className="w-4 h-4" /></>
+                      )}
                     </button>
                   </motion.div>
                 )}
@@ -319,7 +373,7 @@ export default function Checkout() {
                         {
                           value: 'COD' as const,
                           label: 'Cash on Delivery',
-                          desc: 'Pay when your order arrives. ₹50 COD fee applies.',
+                          desc: 'Pay when your order arrives',
                           icon: '💵',
                         },
                       ].map(({ value, label, desc, icon }) => (
@@ -345,11 +399,6 @@ export default function Checkout() {
                             <p className="font-bold text-sm text-gray-900">{label}</p>
                             <p className="text-xs text-gray-500">{desc}</p>
                           </div>
-                          {value === 'RAZORPAY' && (
-                            <span className="ml-auto text-xs text-teal-600 font-semibold bg-teal-50 px-2 py-0.5 rounded-full">
-                              Recommended
-                            </span>
-                          )}
                         </label>
                       ))}
                     </div>
@@ -392,7 +441,7 @@ export default function Checkout() {
                           />
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold text-gray-900 truncate">{item.product.name}</p>
-                            <p className="text-xs text-gray-500">{item.variant.colorName} • Qty: {item.quantity}</p>
+                            <p className="text-xs text-gray-500">{item.variant?.colorName ?? 'Default'} • Qty: {item.quantity}</p>
                             {item.lensOption && (
                               <p className="text-xs text-teal-600">{item.lensOption.name}</p>
                             )}
@@ -448,7 +497,7 @@ export default function Checkout() {
                       />
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-medium text-gray-900 truncate">{item.product.name}</p>
-                        <p className="text-xs text-gray-400">×{item.quantity}</p>
+                        <p className="text-xs text-gray-400">x{item.quantity}</p>
                       </div>
                       <p className="text-xs font-bold text-gray-900 flex-shrink-0">{formatPrice(item.totalPrice)}</p>
                     </div>

@@ -12,6 +12,7 @@ const ProductDetail = lazy(() => import('@/pages/ProductDetail'))
 const Checkout = lazy(() => import('@/pages/Checkout'))
 const Dashboard = lazy(() => import('@/pages/user/Dashboard'))
 const VirtualTryOn = lazy(() => import('@/pages/VirtualTryOn'))
+const OrderSuccess = lazy(() => import('@/pages/OrderSuccess'))
 const Login = lazy(() => import('@/pages/auth/Login'))
 const Register = lazy(() => import('@/pages/auth/Register'))
 
@@ -108,7 +109,7 @@ export const router = createBrowserRouter([
       { path: 'face-shape', element: <div className="p-8 text-center text-xl">Face Shape Detection — Coming Soon</div> },
       { path: 'wishlist', element: <div className="p-8 text-center text-xl">Wishlist</div> },
       { path: 'orders', element: <div className="p-8 text-center text-xl">My Orders</div> },
-      { path: 'orders/:id', element: <div className="p-8 text-center text-xl">Order Detail</div> },
+      { path: 'orders/:id', element: <ProtectedRoute><OrderSuccess /></ProtectedRoute> },
       { path: 'prescriptions', element: <div className="p-8 text-center text-xl">My Prescriptions</div> },
       { path: 'eye-test', element: <div className="p-8 text-center text-xl">Eye Test Booking</div> },
       { path: 'stores', element: <div className="p-8 text-center text-xl">Store Locator</div> },

@@ -34,6 +34,8 @@ export default defineConfig({
               return 'motion'
             if (id.includes('lucide-react') || id.includes('sonner'))
               return 'ui'
+            if (id.includes('@mediapipe'))
+              return 'mediapipe'
           }
         },
       },

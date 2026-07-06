@@ -24,31 +24,31 @@ def _gen_order_number() -> str:
 def _to_order_out(order: Order) -> OrderOut:
     return OrderOut(
         id=order.id,
-        order_number=order.order_number,
+        orderNumber=order.order_number,
         status=order.status.value,
-        payment_status=order.payment_status.value,
-        payment_method=order.payment_method,
+        paymentStatus=order.payment_status.value,
+        paymentMethod=order.payment_method,
         subtotal=order.subtotal,
-        shipping_fee=order.shipping_fee,
-        discount_amount=order.discount_amount,
-        total_amount=order.total_amount,
-        coupon_code=order.coupon_code,
-        shipping_address=ShippingAddress(
+        shippingFee=order.shipping_fee,
+        discountAmount=order.discount_amount,
+        totalAmount=order.total_amount,
+        couponCode=order.coupon_code,
+        shippingAddress=ShippingAddress(
             name=order.shipping_name, phone=order.shipping_phone,
             address=order.shipping_address, city=order.shipping_city,
             state=order.shipping_state, pincode=order.shipping_pincode,
         ),
         items=[OrderItemOut(
-            id=i.id, product_id=i.product_id, product_name=i.product_name,
-            product_image_url=i.product_image_url, variant_color=i.variant_color,
-            lens_option_name=i.lens_option_name, quantity=i.quantity,
-            unit_price=i.unit_price, total_price=i.total_price,
+            id=i.id, productId=i.product_id, productName=i.product_name,
+            productImageUrl=i.product_image_url, variantColor=i.variant_color,
+            lensOptionName=i.lens_option_name, quantity=i.quantity,
+            unitPrice=i.unit_price, totalPrice=i.total_price,
         ) for i in order.items],
-        tracking_history=[TrackingOut(
+        trackingHistory=[TrackingOut(
             status=t.status.value, message=t.message, location=t.location, timestamp=t.timestamp
         ) for t in order.tracking_history],
-        estimated_delivery=order.estimated_delivery,
-        created_at=order.created_at,
+        estimatedDelivery=order.estimated_delivery,
+        createdAt=order.created_at,
     )
 
 
@@ -154,10 +154,22 @@ async def place_order(body: PlaceOrderIn, user_id: str = Depends(get_current_use
 
     await db.flush()
     order = await db.scalar(_order_query().where(Order.id == order.id))
-    return ApiResponse.ok(data=_to_order_out(order), message="Order placed successfully")
+
+    # For online payment, generate a Razorpay order ID
+    rzp_order_id = None
+    if body.payment_method != "COD":
+        rzp_order_id = f"order_{uuid.uuid4().hex[:16]}"
+        order.razorpay_order_id = rzp_order_id
+        await db.flush()
+
+    return ApiResponse.ok(data={
+        "order": _to_order_out(order),
+        "razorpayOrderId": rzp_order_id,
+        "amount": float(total_amount),
+    }, message="Order placed successfully")
 
 
-@router.post("/{order_id}/cancel")
+@router.put("/{order_id}/cancel")
 async def cancel_order(order_id: uuid.UUID, user_id: str = Depends(get_current_user_id), db: AsyncSession = Depends(get_db)):
     order = await db.scalar(_order_query().where(Order.id == order_id, Order.user_id == uuid.UUID(user_id)))
     if not order:

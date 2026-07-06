@@ -3,6 +3,7 @@ import type { FaceAnalysisResult } from '@/types/user'
 
 type TryOnMode = 'idle' | 'loading' | 'active' | 'error'
 type FaceDetectionMode = 'idle' | 'loading' | 'analyzing' | 'done' | 'error'
+type WebcamMode = 'idle' | 'requesting' | 'streaming' | 'error'
 
 interface TryOnState {
   mode: TryOnMode
@@ -13,6 +14,9 @@ interface TryOnState {
   isCameraPermitted: boolean
   error: string | null
   capturedImage: string | null
+  webcamMode: WebcamMode
+  faceDetected: boolean
+  modelLoaded: boolean
 }
 
 const initialState: TryOnState = {
@@ -24,6 +28,9 @@ const initialState: TryOnState = {
   isCameraPermitted: false,
   error: null,
   capturedImage: null,
+  webcamMode: 'idle',
+  faceDetected: false,
+  modelLoaded: false,
 }
 
 const tryOnSlice = createSlice({
@@ -54,6 +61,15 @@ const tryOnSlice = createSlice({
       state.error = action.payload
       state.mode = 'error'
     },
+    setWebcamMode: (state, action: PayloadAction<WebcamMode>) => {
+      state.webcamMode = action.payload
+    },
+    setFaceDetected: (state, action: PayloadAction<boolean>) => {
+      state.faceDetected = action.payload
+    },
+    setModelLoaded: (state, action: PayloadAction<boolean>) => {
+      state.modelLoaded = action.payload
+    },
     resetTryOn: () => initialState,
   },
 })
@@ -66,6 +82,9 @@ export const {
   setCameraPermitted,
   setCapturedImage,
   setTryOnError,
+  setWebcamMode,
+  setFaceDetected,
+  setModelLoaded,
   resetTryOn,
 } = tryOnSlice.actions
 
