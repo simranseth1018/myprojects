@@ -9,7 +9,7 @@ import {
 import ProductCard from '@/components/product/ProductCard'
 import FilterSidebar from '@/components/product/FilterSidebar'
 import { useAppSelector, useAppDispatch } from '@/store'
-import { setFilters, setSort, setPage, setSearchQuery } from '@/store/slices/filterSlice'
+import { setFilters, resetFilters, setSort, setPage, setSearchQuery } from '@/store/slices/filterSlice'
 import { useProducts } from '@/hooks/api/useProducts'
 import { useDebounce } from '@/hooks/ui/useDebounce'
 import { cn } from '@/lib/utils'
@@ -67,16 +67,21 @@ export default function Catalog() {
   useEffect(() => {
     const category = searchParams.get('category')
     const gender = searchParams.get('gender')
-    const featured = searchParams.get('featured')
     const blueLight = searchParams.get('blueLight')
     const q = searchParams.get('q')
 
-    if (category) dispatch(setFilters({ category }))
-    if (gender) dispatch(setFilters({ gender: [gender as 'MEN' | 'WOMEN' | 'UNISEX' | 'KIDS'] }))
-    if (featured) dispatch(setFilters({}))
-    if (blueLight === 'true') dispatch(setFilters({ isBlueLight: true }))
+    dispatch(resetFilters())
+
+    const newFilters: Record<string, unknown> = {}
+    if (category) newFilters.category = category
+    if (gender) newFilters.gender = [gender as 'MEN' | 'WOMEN' | 'UNISEX' | 'KIDS']
+    if (blueLight === 'true') newFilters.isBlueLight = true
+
+    if (Object.keys(newFilters).length > 0) dispatch(setFilters(newFilters))
     if (q) { setLocalSearch(q); dispatch(setSearchQuery(q)) }
-  }, [])
+    else { setLocalSearch(''); dispatch(setSearchQuery('')) }
+    dispatch(setPage(0))
+  }, [searchParams])
 
   useEffect(() => {
     dispatch(setSearchQuery(debouncedSearch))

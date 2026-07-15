@@ -18,7 +18,7 @@ async function getOrCreateLandmarker(): Promise<FaceLandmarker> {
         runningMode: 'VIDEO',
         numFaces: 1,
         outputFaceBlendshapes: false,
-        outputFacialTransformationMatrixes: false,
+        outputFacialTransformationMatrixes: true,
       })
     })()
   }

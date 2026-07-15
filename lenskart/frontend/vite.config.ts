@@ -36,6 +36,8 @@ export default defineConfig({
               return 'ui'
             if (id.includes('@mediapipe'))
               return 'mediapipe'
+            if (id.includes('three') || id.includes('@react-three'))
+              return 'threejs'
           }
         },
       },

@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_ID: str = ""
     RAZORPAY_KEY_ID: str = ""
     RAZORPAY_KEY_SECRET: str = ""
+    PAYTM_MERCHANT_ID: str = ""
+    PAYTM_MERCHANT_KEY: str = ""
     AWS_ACCESS_KEY_ID: str = ""
     AWS_SECRET_ACCESS_KEY: str = ""
     AWS_REGION: str = "ap-south-1"

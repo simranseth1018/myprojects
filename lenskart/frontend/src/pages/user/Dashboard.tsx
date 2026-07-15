@@ -157,7 +157,7 @@ export default function Dashboard() {
                         className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors group"
                       >
                         <div className="w-12 h-12 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0">
-                          {order.items[0]?.product.images[0]?.url && (
+                          {order.items[0]?.product?.images?.[0]?.url && (
                             <img
                               src={order.items[0].product.images[0].url}
                               alt=""

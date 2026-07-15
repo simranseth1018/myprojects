@@ -155,16 +155,18 @@ async def place_order(body: PlaceOrderIn, user_id: str = Depends(get_current_use
     await db.flush()
     order = await db.scalar(_order_query().where(Order.id == order.id))
 
-    # For online payment, generate a Razorpay order ID
-    rzp_order_id = None
-    if body.payment_method != "COD":
-        rzp_order_id = f"order_{uuid.uuid4().hex[:16]}"
-        order.razorpay_order_id = rzp_order_id
+    # For online payment, generate a gateway order ID
+    gateway_order_id = None
+    if body.payment_method not in ("COD",):
+        gateway_order_id = f"order_{uuid.uuid4().hex[:16]}"
+        order.razorpay_order_id = gateway_order_id  # Reused field for all gateways
         await db.flush()
 
     return ApiResponse.ok(data={
         "order": _to_order_out(order),
-        "razorpayOrderId": rzp_order_id,
+        "razorpayOrderId": gateway_order_id,    # Razorpay compat
+        "paytmOrderId": gateway_order_id,       # Paytm compat
+        "gatewayOrderId": gateway_order_id,     # Generic
         "amount": float(total_amount),
     }, message="Order placed successfully")
 

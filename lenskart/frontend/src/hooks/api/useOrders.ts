@@ -78,6 +78,43 @@ export function useVerifyPayment() {
   })
 }
 
+export function useVerifyPaytmPayment() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (data: {
+      orderId: string
+      paytmOrderId: string
+      paytmTxnId: string
+      paytmChecksum: string
+    }) => {
+      const res = await apiClient.post('/payment/paytm/verify', {
+        order_id: data.orderId,
+        paytm_order_id: data.paytmOrderId,
+        paytm_txn_id: data.paytmTxnId,
+        paytm_checksum: data.paytmChecksum,
+      })
+      return res.data.data
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [ORDERS_KEY, 'detail', variables.orderId],
+      })
+    },
+  })
+}
+
+export function useInitiatePaytm() {
+  return useMutation({
+    mutationFn: async (data: { orderId: string; amount: number }) => {
+      const res = await apiClient.post('/payment/paytm/initiate', {
+        order_id: data.orderId,
+        amount: data.amount,
+      })
+      return res.data.data as { txnToken: string; paytmOrderId: string; amount: string; merchantId: string }
+    },
+  })
+}
+
 export function useApplyCoupon() {
   return useMutation({
     mutationFn: async (data: { code: string; cartId: string }) => {
